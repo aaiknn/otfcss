@@ -1,5 +1,7 @@
 #! /bin/zsh
 
+sassOutput=0
+
 function printHelp(){
   helpText="\nUsage:"
   helpText+="\n\toftcss [options]"
@@ -22,68 +24,61 @@ function printVersion(){
 
 function parseArgs(){
   POSITIONALS=()
-  while [[ $# -gt 0 ]]
-  do
-  flag="$1"
+  while [[ $# -gt 0 ]]; do
+    flag="$1"
 
-  case $flag in
-    -h|--help|--version)
-    shift
-    ;;
-    -i|--input)
-    sassInput="$2"
-    shift
-    shift
-    ;;
-    -o|--output)
-    sassOutput="$2"
-    shift
-    shift
-    ;;
-    *)                #unknown
-    POSITIONALS+=("$1")
-    shift
-    ;;
-  esac
+    case $flag in
+      -h|--help|--version)
+      shift
+      ;;
+      -i|--input)
+      sassInput="$2"
+      shift
+      shift
+      ;;
+      -o|--output)
+      sassOutput="$2"
+      shift
+      shift
+      ;;
+      *)                #unknown
+      POSITIONALS+=("$1")
+      shift
+      ;;
+    esac
   done
   set -- "${POSITIONALS[@]}"
-}
 
-function handleSass(){
-  if [ -v sassOutput ]; then
+  if [[ $sassOutput != 0 ]]; then
+    echo "Yup, this works"
     outputFile=$sassOutput
   else
-    outputFile='processed.scss'
-  fi
-
-  python3 otfcss.py $sassInput $outputFile
-
-  if [ $? = "0" ]; then
-    cssExt='.css'
-    cssOut=$outputFile$cssExt
-    sass $outputFile $cssOut --no-source-map --stop-on-error
-
-    if [ $? = "0" ]; then
-      echo "Successfully wrote CSS file $cssOut."
-    else
-      echo "Task failed while processing CSS."
-      sassErrorCode=`cat $cssOut | grep 'Error:' | awk '$1=="/*"{print$2" "$3" "$4" "$5}'`
-      rm $cssOut
+    # Shortcut for input:
+    # If there's only one arg, and it's not a flag, assume it's what's supposed to go in
+    if [[ $# = 1 ]] && [[ $1 != "-".* ]]; then
+      sassInput=$1
     fi
 
-    rm $outputFile
+    outputFile='processed.scss'
   fi
+}
+
+function processSass() {
+  cssExt='.css'
+  cssOut=$outputFile$cssExt
+  sass $outputFile $cssOut --no-source-map --stop-on-error
+
+  if [[ $? = 0 ]]; then
+    echo "Successfully wrote CSS file $cssOut."
+  else
+    echo "Task failed while processing CSS."
+    sassErrorCode=`cat $cssOut | grep 'Error:' | awk '$1=="/*"{print$2" "$3" "$4" "$5}'`
+    rm $cssOut
+  fi
+  rm $outputFile
 
   if [[ $sassErrorCode =~ "variable" ]]; then
     echo "Error: Missing data.\n"
-    #echo "\nYou might be missing some variable declarations in your input files. Pick an option:\n1: Provide additional sass input or\n2: Declare missing variables interactively\n3: Exit"
-    #read chosenOption
-
-    #if [[ $chosenOption = "1" ]]; then
-    #  echo "Move on with moar input"
-    #elif [[ $chosenOption = "2" ]]; then
-    #  echo "Move on with interactive variable declaration"
-    #fi
 
   elif [[ $sassErrorCode =~ "mixin" ]]; then
     echo "Error: Oh no, mixin not found, apparently!\n"
@@ -94,8 +89,16 @@ function handleSass(){
   elif [[ $sassErrorCode =~ "xpected" ]]; then
     echo "Error: No valid Sass input provided.\n"
   fi
+}
 
-  exit
+function processFiles() {
+  python3 scripts/concat.py $sassInput $outputFile
+
+  if [[ $? = 0 ]]; then
+    processSass
+  else
+    echo "Task failed while concatenating input files."
+  fi
 }
 
 function main(){
@@ -114,7 +117,8 @@ function main(){
     esac
   done
 
-  handleSass
+  processFiles
+  exit
 }
 
 main "$@"

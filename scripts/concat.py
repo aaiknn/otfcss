@@ -33,7 +33,7 @@ def readFile(path):
     file = open(path, 'r')
   except PermissionError:
     print(messages['errors']['missReadPerm'] + path + '.')
-    return False
+    return PermissionError
   with file:
     data = gatherFileData(file, path)
     file.close()
@@ -63,6 +63,7 @@ def getInputData(args):
         data.append(readFile(path))
 
     data = '\n'.join(data)
+
   return data
 
 def writeFile(fileName, data):
@@ -72,16 +73,21 @@ def writeFile(fileName, data):
 
 def concatFiles(args):
   data = getInputData(args)
+
   if data == False:
     return False
   if data == None:
     print(messages['errors']['datalessIn'])
     return False
+  if isinstance(data, type(BaseException)):
+    raise data
+
   outputPath = args[2]
   writeFile(outputPath, data)
   return outputPath
 
 def validateArgs(args):
+  print(args)
   if len(args) == 1:
     args = promptForInput(args)
   elif len(args) == 2:
@@ -94,6 +100,7 @@ def validateArgs(args):
     checkedArgs.append(args[2])
     args = checkedArgs
 
+  print(args)
   return args
 
 def main(args):
