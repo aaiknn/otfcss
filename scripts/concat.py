@@ -87,7 +87,6 @@ def concatFiles(args):
   return outputPath
 
 def validateArgs(args):
-  print(args)
   if len(args) == 1:
     args = promptForInput(args)
   elif len(args) == 2:
@@ -100,7 +99,6 @@ def validateArgs(args):
     checkedArgs.append(args[2])
     args = checkedArgs
 
-  print(args)
   return args
 
 def main(args):

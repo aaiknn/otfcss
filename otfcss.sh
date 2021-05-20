@@ -18,7 +18,7 @@ function printHelp(){
 }
 
 function printVersion(){
-  versionNo="v0.1.0"
+  versionNo="v0.2.0"
   echo $versionNo
 }
 
@@ -50,7 +50,6 @@ function parseArgs(){
   set -- "${POSITIONALS[@]}"
 
   if [[ $sassOutput != 0 ]]; then
-    echo "Yup, this works"
     outputFile=$sassOutput
   else
     # Shortcut for input:
@@ -70,12 +69,12 @@ function processSass() {
 
   if [[ $? = 0 ]]; then
     echo "Successfully wrote CSS file $cssOut."
+    sassErrorCode="NONE"
   else
     echo "Task failed while processing CSS."
     sassErrorCode=`cat $cssOut | grep 'Error:' | awk '$1=="/*"{print$2" "$3" "$4" "$5}'`
     rm $cssOut
   fi
-  rm $outputFile
 
   if [[ $sassErrorCode =~ "variable" ]]; then
     echo "Error: Missing data.\n"
@@ -88,6 +87,45 @@ function processSass() {
 
   elif [[ $sassErrorCode =~ "xpected" ]]; then
     echo "Error: No valid Sass input provided.\n"
+  fi
+
+  if [[ $sassErrorCode =~ ^"Error" ]]; then
+    if [[ $1 == "--continuous-interactive" ]]; then
+      interactiveInput
+    else
+      troubleshootSass
+    fi
+  fi
+
+  if [[ $sassErrorCode = "NONE" ]]; then
+    rm $outputFile
+    unset sassErrorCode
+  fi
+}
+
+function interactiveInput() {
+  echo "Declare missing input for $sassErrorCode"
+  read additionalInteractiveInput
+  echo $additionalInteractiveInput > _missingInput.scss
+  cat $outputFile >> _missingInput.scss
+  cat _missingInput.scss > $outputFile
+  rm _missingInput.scss
+  processSass --continuous-interactive
+}
+
+function troubleshootSass() {
+  echo "\nYou might be missing some extra input. Pick an option:
+    1: Provide a path to an additional sass file or directory of sass files
+    2: Declare missing input interactively from the cli
+    3: Exit"
+  read chosenOption
+
+  if [[ $chosenOption = "1" ]]; then
+    echo "This feature isn't yet implemented."
+  elif [[ $chosenOption = "2" ]]; then
+    interactiveInput
+  elif [[ $chosenOption = "3" ]]; then
+    rm $outputFile
   fi
 }
 
