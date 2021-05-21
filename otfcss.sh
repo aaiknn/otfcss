@@ -95,8 +95,7 @@ function processSass() {
   fi
 
   if [[ $sassErrorCode =~ ^"Error" ]]; then
-    if [[ $1 = "--continuous-interactive" || $interactive = "1" ]]; then 
-      echo $interactive
+    if [[ $interactive == 1 ]] || [[ $1 == "--continuous-interactive" ]]; then
       interactiveInput
     else
       troubleshootSass
@@ -110,7 +109,7 @@ function processSass() {
 }
 
 function interactiveInput() {
-  printf "Declare missing input for $sassErrorCode...\n"
+  printf "\nDeclare missing input for $sassErrorCode...\n"
   read additionalInteractiveInput
   echo $additionalInteractiveInput > _missingInput.scss
   cat $outputFile >> _missingInput.scss

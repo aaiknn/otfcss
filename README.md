@@ -14,6 +14,8 @@ Otfcss is a very basic script that turns Sass files in a specified path into CSS
 ```
   -h | --help                   Show the help text.
   -i <path> | --input <path>    Specify Sass input file or directory.
+  -I | --interactive            If an error occurs during Sass processing, skip the prompt
+                                and jump directly into interactive troubleshooting.
   -o <name> | --output <name>   Specify CSS output file name.
   --version                     Show version.
 ```
