@@ -1,4 +1,4 @@
-#! /bin/zsh
+#! /bin/sh
 
 sassOutput=0
 
@@ -18,7 +18,7 @@ function printHelp(){
 }
 
 function printVersion(){
-  versionNo="v0.2.0"
+  versionNo="v0.2.1"
   echo $versionNo
 }
 
@@ -121,7 +121,10 @@ function troubleshootSass() {
   read chosenOption
 
   if [[ $chosenOption = "1" ]]; then
-    echo "This feature isn't yet implemented."
+    echo "Move on with moar input for $sassErrorCode"
+    #read additionalInput
+    #echo $additionalInteractiveInput > _missingInput.scss
+    #cat $outputFile
   elif [[ $chosenOption = "2" ]]; then
     interactiveInput
   elif [[ $chosenOption = "3" ]]; then
