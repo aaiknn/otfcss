@@ -3,22 +3,23 @@
 sassOutput=0
 
 function printHelp(){
-  helpText="\nUsage:"
-  helpText+="\n\toftcss [options]"
-  helpText+="\n\totfcss -i (<input-file-path> | <input-dir-path>) [-o <out-file-name>]"
-  helpText+="\n\totfcss -h | --help"
-  helpText+="\n\totfcss --version"
-  helpText+="\n\nOptions:"
-  helpText+="\n\t-h | --help\t\t\tShow this help."
-  helpText+="\n\t-i <path> | --input <path>\tSpecify Sass input file or directory."
-  helpText+="\n\t-o <name> | --output <name>\tSpecify CSS output file name."
-  helpText+="\n\t--version\t\t\tShow version."
-  helpText+="\n"
-  echo $helpText
+  printf "
+  Usage:
+      oftcss [options]
+      otfcss -i (<input-file-path> | <input-dir-path>) [-o <out-file-name>]
+      otfcss -h | --help
+      otfcss --version\n\n
+  Options:
+      -h | --help\t\t\tShow this help.
+      -i <path> | --input <path>\tSpecify Sass input file or directory.
+      -I | --interactive\t\tIf an error occurs during Sass processing, skip the prompt
+            \t\t\t\tand jump directly into interactive troubleshooting.
+      -o <name> | --output <name>\tSpecify CSS output file name.
+      --version\t\t\t\tShow version.\n\n"
 }
 
 function printVersion(){
-  versionNo="v0.2.1"
+  versionNo="v0.2.2"
   echo $versionNo
 }
 
@@ -39,6 +40,10 @@ function parseArgs(){
       -o|--output)
       sassOutput="$2"
       shift
+      shift
+      ;;
+      -I|--interactive)
+      interactive=1
       shift
       ;;
       *)                #unknown
@@ -77,20 +82,21 @@ function processSass() {
   fi
 
   if [[ $sassErrorCode =~ "variable" ]]; then
-    echo "Error: Missing data.\n"
+    printf "\nError: Missing data."
 
   elif [[ $sassErrorCode =~ "mixin" ]]; then
-    echo "Error: Oh no, mixin not found, apparently!\n"
+    printf "\nError: Oh no, mixin not found, apparently!"
 
   elif [[ $sassErrorCode =~ "target selector" ]]; then
-    echo "Error: Ohps, extend target missing, apparently!\n"
+    printf "\nError: Ohps, extend target missing, apparently!"
 
   elif [[ $sassErrorCode =~ "xpected" ]]; then
-    echo "Error: No valid Sass input provided.\n"
+    printf "\nError: No valid Sass input provided."
   fi
 
   if [[ $sassErrorCode =~ ^"Error" ]]; then
-    if [[ $1 == "--continuous-interactive" ]]; then
+    if [[ $1 = "--continuous-interactive" || $interactive = "1" ]]; then 
+      echo $interactive
       interactiveInput
     else
       troubleshootSass
@@ -104,7 +110,7 @@ function processSass() {
 }
 
 function interactiveInput() {
-  echo "Declare missing input for $sassErrorCode"
+  printf "Declare missing input for $sassErrorCode...\n"
   read additionalInteractiveInput
   echo $additionalInteractiveInput > _missingInput.scss
   cat $outputFile >> _missingInput.scss
@@ -114,17 +120,14 @@ function interactiveInput() {
 }
 
 function troubleshootSass() {
-  echo "\nYou might be missing some extra input. Pick an option:
+  printf "\nYou might be missing some extra input. Pick an option:
     1: Provide a path to an additional sass file or directory of sass files
     2: Declare missing input interactively from the cli
-    3: Exit"
+    3: Exit\n"
   read chosenOption
 
   if [[ $chosenOption = "1" ]]; then
-    echo "Move on with moar input for $sassErrorCode"
-    #read additionalInput
-    #echo $additionalInteractiveInput > _missingInput.scss
-    #cat $outputFile
+    printf "This feature isn't yet implemented."
   elif [[ $chosenOption = "2" ]]; then
     interactiveInput
   elif [[ $chosenOption = "3" ]]; then

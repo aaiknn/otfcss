@@ -1,4 +1,4 @@
-# Otfcss v0.2.1
+# Otfcss v0.2.2
 
 Otfcss is a very basic script that turns Sass files in a specified path into CSS.
 
