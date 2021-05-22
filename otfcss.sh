@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/zsh
 
 sassOutput=0
 
@@ -19,7 +19,7 @@ function printHelp(){
 }
 
 function printVersion(){
-  versionNo="v0.2.2"
+  versionNo="v0.3.0"
   echo $versionNo
 }
 
@@ -97,6 +97,7 @@ function processSass() {
   if [[ $sassErrorCode =~ ^"Error" ]]; then
     if [[ $interactive == 1 ]] || [[ $1 == "--continuous-interactive" ]]; then
       interactiveInput
+      processSass --continuous-interactive
     else
       troubleshootSass
     fi
@@ -115,27 +116,38 @@ function interactiveInput() {
   cat $outputFile >> _missingInput.scss
   cat _missingInput.scss > $outputFile
   rm _missingInput.scss
-  processSass --continuous-interactive
+}
+
+function additionalFileInput() {
+    printf "\nEnter an additional data input path for $sassErrorCode...\n"
+    read additionalInput
+    processFiles --amendInput $additionalInput
 }
 
 function troubleshootSass() {
   printf "\nYou might be missing some extra input. Pick an option:
-    1: Provide a path to an additional sass file or directory of sass files
+    1: Provide a path to an additional Sass file or directory of Sass files
     2: Declare missing input interactively from the cli
     3: Exit\n"
   read chosenOption
 
   if [[ $chosenOption = "1" ]]; then
-    printf "This feature isn't yet implemented."
+    sassInput=$outputFile
+    additionalFileInput
   elif [[ $chosenOption = "2" ]]; then
     interactiveInput
+    processSass --continuous-interactive
   elif [[ $chosenOption = "3" ]]; then
     rm $outputFile
   fi
 }
 
 function processFiles() {
-  python3 scripts/concat.py $sassInput $outputFile
+  if [[ $1 == "--amendInput" ]]; then
+    python3 scripts/concat.py $sassInput $outputFile --amendInput $additionalInput && unset additionalInput
+  else
+    python3 scripts/concat.py $sassInput $outputFile
+  fi
 
   if [[ $? = 0 ]]; then
     processSass

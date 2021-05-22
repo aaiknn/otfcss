@@ -20,13 +20,17 @@ def fileOrDir(path):
     return 2
   return False
 
-def promptForInput(args):
+def promptForInput(arg):
+  if arg:
+    print(arg + ' is not a valid path.')
+
   inputPath = input(messages['prompts']['pathInput'])
   while not (os.path.isfile(inputPath) or os.path.isdir(inputPath)):
     print(messages['errors']['pathInvalid'])
     inputPath = input(messages['prompts']['pathInput'])
-  args.append(inputPath)
-  return args
+  arg = inputPath
+
+  return arg
 
 def readFile(path):
   try:
@@ -48,8 +52,8 @@ def gatherFileData(file, fileHeader):
   data = '\n'.join(data)
   return data
 
-def getInputData(args):
-  inputPath = args[1]
+def getInputData(arg):
+  inputPath = arg
 
   if fileOrDir(inputPath) == 1:
     data = readFile(inputPath)
@@ -72,7 +76,15 @@ def writeFile(fileName, data):
   newFile.close
 
 def concatFiles(args):
-  data = getInputData(args)
+  data = ''
+
+  if isinstance(args[1], str):
+    data = getInputData(args[1])
+  elif isinstance(args[1], list):
+    # reversing assumes that --addInput attempts to set missing variables...
+    for arg in reversed(args[1]):
+      fileData = getInputData(arg)
+      data+=fileData
 
   if data == False:
     return False
@@ -88,16 +100,28 @@ def concatFiles(args):
 
 def validateArgs(args):
   if len(args) == 1:
-    args = promptForInput(args)
+    inputArg = promptForInput()
+    args.append(inputArg)
   elif len(args) == 2:
     args.append('processed.scss')
+
   elif len(args) > 3:
+    if '--amendInput' in args:
+      i = args.index('--amendInput')
+      arr = [args[1], args[i + 1]]
+      args[1] = arr
+
     args=[args[0],args[1],args[2]]
 
-  if fileOrDir(args[1]) == False:
-    checkedArgs = promptForInput([args[0]])
-    checkedArgs.append(args[2])
-    args = checkedArgs
+  if isinstance(args[1], str):
+    if fileOrDir(args[1]) == False:
+      args[1] = promptForInput(args[1])
+
+  elif isinstance(args[1], list):
+    for arg in args[1]:
+      if fileOrDir(arg) == False:
+        j = args[1].index(arg)
+        args[1][j] = promptForInput(arg)
 
   return args
 
